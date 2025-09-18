@@ -1,0 +1,42 @@
+package main
+
+import (
+	"context"
+	"sse/internal/config"
+	http_handlers "sse/internal/handlers/http"
+	"sse/pkg/http"
+	"sse/pkg/http/middlewares"
+	"sse/pkg/rabbitmq"
+	"sse/pkg/sse"
+)
+
+func main() {
+	config := config.NewConfig()
+
+	rmq, err := rabbitmq.NewRabbitMQ(config.RabbitMQ)
+	if err != nil {
+		panic(err)
+	}
+
+	err = rmq.AddDurableQueue("events", "events-exchange", "events.send")
+	if err != nil {
+		panic(err)
+	}
+
+	sseService := sse.NewSSEService(rmq)
+
+	sseHandler := http_handlers.NewSSEHandler(sseService)
+
+	go func() {
+		err = sseService.Start(context.Background(), "events")
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	server := http.NewServer(config.Server)
+
+	server.Router().GET("/events", middlewares.SSEHeaders, sseHandler.Handle)
+
+	server.Listen()
+}

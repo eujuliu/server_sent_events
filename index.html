@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Server Sent Event</title>
+  </head>
+
+  <body>
+    <div class="event-data" id="data"></div>
+  </body>
+
+  <script>
+    var stream = new EventSource("http://localhost:8081/events");
+
+    stream.onopen = function (event) {
+      console.log(event);
+    };
+    stream.onmessage = function (event) {
+      console.log(JSON.parse(event.data));
+      document.getElementById("data").innerText = event.data;
+    };
+    stream.onerror = function (event) {
+      console.log(event);
+      stream.close();
+    };
+  </script>
+</html>

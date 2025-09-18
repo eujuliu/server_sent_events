@@ -1,0 +1,48 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    restart: unless-stopped
+    container_name: rabbitmq
+    env_file: ./.env.docker
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.development
+    restart: unless-stopped
+    container_name: app
+    env_file: ./.env.docker
+    ports:
+      - ${PORT}:${PORT}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+    develop:
+      watch:
+        - action: sync
+          path: ./
+          target: /app/
+          ignore:
+            - .gitignore
+            - .github
+            - test/
+            - tmp/
+            - bin/
+            - docker*
+            - "*_test.go"
+        - action: rebuild
+          path: ./env*
+          target: /app/
+          ignore:
+            - "!.env*"
+
+    profiles: [sse_dev]
