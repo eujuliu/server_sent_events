@@ -44,7 +44,7 @@ func (h *SSEHandler) Handle(c *gin.Context) {
 		case <-pingTicker:
 			c.SSEvent("ping", "pong")
 		case <-client.Close():
-			c.SSEvent("disconnected", "true")
+			c.SSEvent("system", "client disconnected!")
 			return false
 		}
 

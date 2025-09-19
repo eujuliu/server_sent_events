@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"sse/internal/interfaces"
 	"sse/pkg/redis"
 	"strings"
@@ -42,10 +43,6 @@ func (s *SSEService) run() {
 		case client := <-s.register:
 			s.mu.Lock()
 			s.clients[client.id] = client
-			select {
-			case client.send <- []byte("connected!"):
-			default:
-			}
 			s.mu.Unlock()
 		case client := <-s.unregister:
 			s.mu.Lock()
@@ -109,16 +106,13 @@ func (s *SSEService) subscribeKeySpaceNotifications() {
 	pubsub := s.redis.Subscribe(context.Background(), "__keyevent@0__:expired")
 
 	go func() {
-		defer func() {
-			_ = pubsub.Close()
-		}()
-
 		for msg := range pubsub.Channel() {
 			if !strings.HasPrefix(msg.Payload, "session_id:") {
 				continue
 			}
 
 			expiredKey := strings.Split(msg.Payload, ":")[1]
+			slog.Info(fmt.Sprintf("session %s closed!", expiredKey))
 
 			if client, ok := s.getClient(expiredKey); ok {
 				s.UnregisterClient(client)

@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"sse/internal/config"
 	"sse/pkg/http/middlewares"
+	ratelimiter "sse/pkg/rate_limiter"
 	"syscall"
 	"time"
 
@@ -19,13 +20,17 @@ type Server struct {
 	server *http.Server
 }
 
-func NewServer(config *config.ServerConfig) *Server {
+func NewServer(
+	config *config.ServerConfig,
+	limiter *ratelimiter.SlidingWindowCounterLimiter,
+) *Server {
 	gin.SetMode(config.GinMode)
 
 	router := gin.New()
 
 	router.Use(middlewares.Cors)
 	router.Use(middlewares.Logger)
+	router.Use(middlewares.RateLimiter(limiter))
 	router.Use(gin.Recovery())
 
 	router.GET("/ping", func(c *gin.Context) {

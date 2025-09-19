@@ -28,10 +28,17 @@ type RedisConfig struct {
 	DB       int
 }
 
+type RateLimiterConfig struct {
+	RequestLimit  int
+	WindowSize    int64
+	SubWindowSize int64
+}
+
 type Config struct {
-	RabbitMQ *RabbitMQConfig
-	Server   *ServerConfig
-	Redis    *RedisConfig
+	RabbitMQ    *RabbitMQConfig
+	Server      *ServerConfig
+	Redis       *RedisConfig
+	RateLimiter *RateLimiterConfig
 }
 
 func NewConfig() *Config {
@@ -61,6 +68,11 @@ func NewConfig() *Config {
 			Password: utils.GetEnv("REDIS_PASSWORD", ""),
 			Username: utils.GetEnv("REDIS_USERNAME", ""),
 			DB:       redis_db,
+		},
+		RateLimiter: &RateLimiterConfig{
+			RequestLimit:  5,
+			WindowSize:    60, // in seconds
+			SubWindowSize: 20, // in seconds
 		},
 	}
 }

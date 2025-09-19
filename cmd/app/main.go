@@ -7,6 +7,7 @@ import (
 	"sse/pkg/http"
 	"sse/pkg/http/middlewares"
 	"sse/pkg/rabbitmq"
+	ratelimiter "sse/pkg/rate_limiter"
 	"sse/pkg/redis"
 	"sse/pkg/sse"
 )
@@ -31,8 +32,6 @@ func main() {
 
 	sseService := sse.NewSSEService(rmq, rdb)
 
-	sseHandler := http_handlers.NewSSEHandler(sseService)
-
 	go func() {
 		err = sseService.Start(context.Background(), "events")
 		if err != nil {
@@ -40,7 +39,16 @@ func main() {
 		}
 	}()
 
-	server := http.NewServer(config.Server)
+	sseHandler := http_handlers.NewSSEHandler(sseService)
+
+	limiter := ratelimiter.NewSlidingWindowCounterLimiter(
+		rdb,
+		config.RateLimiter.RequestLimit,
+		config.RateLimiter.WindowSize,
+		config.RateLimiter.SubWindowSize,
+	)
+
+	server := http.NewServer(config.Server, limiter)
 
 	server.Router().GET("/events", middlewares.SSEHeaders, sseHandler.Handle)
 

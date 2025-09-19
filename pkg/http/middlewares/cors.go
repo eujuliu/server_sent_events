@@ -8,8 +8,8 @@ import (
 )
 
 var Cors gin.HandlerFunc = cors.New(cors.Config{
-	AllowOrigins:     []string{"http://localhost:5500"},
-	AllowMethods:     []string{"GET", "OPTIONS"},
+	AllowAllOrigins:  true,
+	AllowMethods:     []string{"GET"},
 	AllowHeaders:     []string{"Origin", "Content-Type"},
 	ExposeHeaders:    []string{"Content-Length"},
 	AllowCredentials: true,
