@@ -3,29 +3,34 @@ package sse
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sse/internal/interfaces"
+	"sse/pkg/redis"
+	"strings"
 	"sync"
 )
 
 type SSEService struct {
-	consumer      interfaces.IQueue
-	clients       map[*Client]bool
-	activeClients int
-	broadcast     chan interfaces.Event
-	register      chan *Client
-	unregister    chan *Client
-	mu            sync.Mutex
+	queue      interfaces.IQueue
+	redis      *redis.Redis
+	clients    map[string]*Client
+	broadcast  chan interfaces.Event
+	register   chan *Client
+	unregister chan *Client
+	mu         sync.Mutex
 }
 
-func NewSSEService(consumer interfaces.IQueue) *SSEService {
+func NewSSEService(queue interfaces.IQueue, redis *redis.Redis) *SSEService {
 	svc := &SSEService{
-		consumer:   consumer,
-		clients:    make(map[*Client]bool),
+		queue:      queue,
+		redis:      redis,
+		clients:    make(map[string]*Client),
 		broadcast:  make(chan interfaces.Event, 100),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 	}
 
+	svc.subscribeKeySpaceNotifications()
 	go svc.run()
 
 	return svc
@@ -36,33 +41,40 @@ func (s *SSEService) run() {
 		select {
 		case client := <-s.register:
 			s.mu.Lock()
-			s.clients[client] = true
-			s.activeClients++
+			s.clients[client.id] = client
+			select {
+			case client.send <- []byte("connected!"):
+			default:
+			}
 			s.mu.Unlock()
 		case client := <-s.unregister:
 			s.mu.Lock()
-			if _, ok := s.clients[client]; ok {
-				s.activeClients--
-				delete(s.clients, client)
+
+			if _, ok := s.clients[client.id]; ok {
 				close(client.send)
+				close(client.close)
+				delete(s.clients, client.id)
 			}
+
 			s.mu.Unlock()
 		case event := <-s.broadcast:
 			data, _ := json.Marshal(event)
 			s.mu.Lock()
-			for client := range s.clients {
+
+			if client, ok := s.clients[event.ClientID]; ok {
 				select {
 				case client.send <- data:
 				default:
 				}
 			}
+
 			s.mu.Unlock()
 		}
 	}
 }
 
 func (s *SSEService) Start(ctx context.Context, queue string) error {
-	return s.consumer.Consume(ctx, queue, func(event interfaces.Event) error {
+	return s.queue.Consume(ctx, queue, func(event interfaces.Event) error {
 		select {
 		case s.broadcast <- event:
 		default:
@@ -72,14 +84,45 @@ func (s *SSEService) Start(ctx context.Context, queue string) error {
 	})
 }
 
-func (s *SSEService) RegisterClient(client *Client) {
+func (s *SSEService) RegisterClient(ctx context.Context, client *Client) error {
+	_, err := s.redis.Get(ctx, fmt.Sprintf("session_id:%v", client.id))
+	if err != nil {
+		return err
+	}
+
 	s.register <- client
+
+	return nil
 }
 
 func (s *SSEService) UnregisterClient(client *Client) {
 	s.unregister <- client
 }
 
-func (s *SSEService) ClientsCounts() int {
-	return s.activeClients
+func (s *SSEService) getClient(id string) (*Client, bool) {
+	client, ok := s.clients[id]
+
+	return client, ok
+}
+
+func (s *SSEService) subscribeKeySpaceNotifications() {
+	pubsub := s.redis.Subscribe(context.Background(), "__keyevent@0__:expired")
+
+	go func() {
+		defer func() {
+			_ = pubsub.Close()
+		}()
+
+		for msg := range pubsub.Channel() {
+			if !strings.HasPrefix(msg.Payload, "session_id:") {
+				continue
+			}
+
+			expiredKey := strings.Split(msg.Payload, ":")[1]
+
+			if client, ok := s.getClient(expiredKey); ok {
+				s.UnregisterClient(client)
+			}
+		}
+	}()
 }

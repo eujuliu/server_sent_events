@@ -2,6 +2,7 @@ package config
 
 import (
 	"sse/pkg/utils"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,12 +21,25 @@ type ServerConfig struct {
 	GinMode string
 }
 
+type RedisConfig struct {
+	Addr     string
+	Password string
+	Username string
+	DB       int
+}
+
 type Config struct {
 	RabbitMQ *RabbitMQConfig
 	Server   *ServerConfig
+	Redis    *RedisConfig
 }
 
 func NewConfig() *Config {
+	redis_db, err := strconv.Atoi(utils.GetEnv("REDIS_DB", "0"))
+	if err != nil {
+		panic(err)
+	}
+
 	return &Config{
 		RabbitMQ: &RabbitMQConfig{
 			Port:     utils.GetEnv("RABBITMQ_PORT", "5672"),
@@ -41,6 +55,12 @@ func NewConfig() *Config {
 			Host:    utils.GetEnv("HOST", "0.0.0.0"),
 			Port:    utils.GetEnv("PORT", "8081"),
 			GinMode: utils.GetEnv("GIN_MODE", gin.ReleaseMode),
+		},
+		Redis: &RedisConfig{
+			Addr:     utils.GetEnv("REDIS_ADDRESS", "localhost:6379"),
+			Password: utils.GetEnv("REDIS_PASSWORD", ""),
+			Username: utils.GetEnv("REDIS_USERNAME", ""),
+			DB:       redis_db,
 		},
 	}
 }

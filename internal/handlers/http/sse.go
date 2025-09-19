@@ -1,8 +1,11 @@
 package http_handlers
 
 import (
+	"context"
 	"io"
+	"net/http"
 	"sse/pkg/sse"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,13 +21,31 @@ func NewSSEHandler(sseService *sse.SSEService) *SSEHandler {
 }
 
 func (h *SSEHandler) Handle(c *gin.Context) {
-	client := sse.NewClient()
-	h.sseService.RegisterClient(client)
+	clientId := c.Query("userId")
+
+	client := sse.NewClient(clientId)
+	err := h.sseService.RegisterClient(context.Background(), client)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":  http.StatusBadRequest,
+			"error": "this client is not logged",
+		})
+
+		return
+	}
+
 	defer func() { h.sseService.UnregisterClient(client) }()
+	pingTicker := time.Tick(15 * time.Second)
 
 	c.Stream(func(w io.Writer) bool {
-		if msg, ok := <-client.Send(); ok {
+		select {
+		case msg := <-client.Send():
 			c.SSEvent("message", msg)
+		case <-pingTicker:
+			c.SSEvent("ping", "pong")
+		case <-client.Close():
+			c.SSEvent("disconnected", "true")
+			return false
 		}
 
 		return true

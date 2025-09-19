@@ -24,9 +24,9 @@ func NewServer(config *config.ServerConfig) *Server {
 
 	router := gin.New()
 
-	router.Use(gin.Recovery())
-	router.Use(gin.Logger())
 	router.Use(middlewares.Cors)
+	router.Use(middlewares.Logger)
+	router.Use(gin.Recovery())
 
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")

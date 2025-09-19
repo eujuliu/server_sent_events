@@ -7,6 +7,7 @@ import (
 	"sse/pkg/http"
 	"sse/pkg/http/middlewares"
 	"sse/pkg/rabbitmq"
+	"sse/pkg/redis"
 	"sse/pkg/sse"
 )
 
@@ -23,7 +24,12 @@ func main() {
 		panic(err)
 	}
 
-	sseService := sse.NewSSEService(rmq)
+	rdb, err := redis.NewRedis(config.Redis)
+	if err != nil {
+		panic(err)
+	}
+
+	sseService := sse.NewSSEService(rmq, rdb)
 
 	sseHandler := http_handlers.NewSSEHandler(sseService)
 

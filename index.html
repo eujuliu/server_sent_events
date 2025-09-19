@@ -10,7 +10,9 @@
   </body>
 
   <script>
-    var stream = new EventSource("http://localhost:8081/events");
+    var stream = new EventSource(
+      "http://localhost:8081/events?userId=34870c42-fca8-409a-aa27-e9e2510cb596",
+    );
 
     stream.onopen = function (event) {
       console.log(event);

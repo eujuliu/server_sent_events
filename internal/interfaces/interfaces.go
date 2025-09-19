@@ -3,8 +3,9 @@ package interfaces
 import "context"
 
 type Event struct {
-	Data string `json:"data"`
-	Type string `json:"type"`
+	ClientID string `json:"clientId"`
+	Type     string `json:"type"`
+	Data     string `json:"data"`
 }
 
 type IQueue interface {
