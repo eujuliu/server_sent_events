@@ -20,7 +20,7 @@ func main() {
 		panic(err)
 	}
 
-	err = rmq.AddDurableQueue("events", "events-exchange", "events.send")
+	err = rmq.AddDurableQueue("events", "events", "events.send")
 	if err != nil {
 		panic(err)
 	}
