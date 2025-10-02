@@ -5,9 +5,9 @@
 <p align="center">
   A Server-Sent Events (SSE) service that receives events via a queue and broadcasts them to connected clients.
   <br />
-  <a href="https://github.com/eujuliu/taskscheduler-sse/issues">Have a question?</a>
+  <a href="https://github.com/eujuliu/server-sent-events/issues">Have a question?</a>
   ·
-  <a href="https://github.com/eujuliu/taskscheduler-sse/fork">Request Feature</a>
+  <a href="https://github.com/eujuliu/server-sent-events/fork">Request Feature</a>
 </p>
 
 <ul>
