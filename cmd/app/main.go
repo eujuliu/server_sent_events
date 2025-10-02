@@ -50,7 +50,8 @@ func main() {
 
 	server := http.NewServer(config.Server, limiter)
 
-	server.Router().GET("/events", middlewares.SSEHeaders, sseHandler.Handle)
+	server.Router().
+		GET("/events", middlewares.SSEHeaders, middlewares.Authentication, sseHandler.Handle)
 
 	server.Listen()
 }

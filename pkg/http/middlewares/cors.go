@@ -10,7 +10,7 @@ import (
 var Cors gin.HandlerFunc = cors.New(cors.Config{
 	AllowAllOrigins:  true,
 	AllowMethods:     []string{"GET"},
-	AllowHeaders:     []string{"Origin", "Content-Type"},
+	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 	ExposeHeaders:    []string{"Content-Length"},
 	AllowCredentials: true,
 	MaxAge:           12 * time.Hour,
