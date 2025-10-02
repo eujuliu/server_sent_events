@@ -1,7 +1,6 @@
 package http_handlers
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"sse/pkg/sse"
@@ -24,7 +23,7 @@ func (h *SSEHandler) Handle(c *gin.Context) {
 	clientId := c.Query("userId")
 
 	client := sse.NewClient(clientId)
-	err := h.sseService.RegisterClient(context.Background(), client)
+	err := h.sseService.RegisterClient(c, client)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"code":  http.StatusBadRequest,

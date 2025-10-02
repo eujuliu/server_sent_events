@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"log/slog"
+	"os"
 	"sse/internal/config"
 	http_handlers "sse/internal/handlers/http"
 	"sse/pkg/http"
@@ -10,10 +12,24 @@ import (
 	ratelimiter "sse/pkg/rate_limiter"
 	"sse/pkg/redis"
 	"sse/pkg/sse"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	config := config.NewConfig()
+
+	loggerLevel := slog.LevelInfo
+
+	if config.Server.GinMode == gin.DebugMode {
+		loggerLevel = slog.LevelDebug
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: loggerLevel,
+	}))
+
+	slog.SetDefault(logger)
 
 	rmq, err := rabbitmq.NewRabbitMQ(config.RabbitMQ)
 	if err != nil {
@@ -50,7 +66,8 @@ func main() {
 
 	server := http.NewServer(config.Server, limiter)
 
-	server.Router().GET("/events", middlewares.SSEHeaders, sseHandler.Handle)
+	server.Router().
+		GET("/events", middlewares.SSEHeaders, middlewares.Authentication, sseHandler.Handle)
 
 	server.Listen()
 }
