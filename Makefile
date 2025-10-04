@@ -13,7 +13,7 @@ dev:
 
 watch:
 	cat .env* > .env.docker; \
-	docker compose --env-file ./.env.docker -f ./docker-compose.development.yml -p sse --profile sse_dev watch --prune; \
+	docker compose --env-file ./.env.docker -f ./docker-compose.development.yml -p sse --profile all watch --prune; \
 	make watch_down
 
 watch_down:
