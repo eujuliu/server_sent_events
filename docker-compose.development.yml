@@ -30,7 +30,7 @@ services:
   sse:
     build:
       context: .
-      dockerfile: Dockerfile.development
+      dockerfile: Dockerfile
     restart: unless-stopped
     container_name: sse
     env_file: ./.env.docker
