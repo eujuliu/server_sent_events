@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"sse/internal/config"
 	"sse/internal/interfaces"
 	"strings"
@@ -64,12 +65,14 @@ func (rmq *RabbitMQ) Consume(
 			var event interfaces.Event
 
 			if err := json.Unmarshal(msg.Body, &event); err != nil {
-				_ = msg.Nack(false, true)
+				slog.Error(err.Error())
+				_ = msg.Nack(false, false)
 				continue
 			}
 
 			if err := handler(event); err != nil {
-				_ = msg.Nack(false, true)
+				slog.Error(err.Error())
+				_ = msg.Nack(false, false)
 				continue
 			}
 
