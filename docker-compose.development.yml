@@ -70,6 +70,7 @@ services:
     profiles:
       - all
       - single
+      - prod
 
   ngrok:
     image: ngrok/ngrok:latest
@@ -89,4 +90,4 @@ services:
 networks:
   default:
     name: scheduler
-    external: true
+    driver: bridge

@@ -7,12 +7,17 @@ RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux make build
 
-FROM gcr.io/distroless/base-debian11 AS runner
+FROM debian:bullseye-slim AS runner
+
+RUN apt-get update && apt-get install -y curl
 
 WORKDIR /
 
-COPY --from=builder /app/bin/sse /app
+RUN addgroup --system --gid 1001 app
+RUN adduser --system --uid 1001 app
 
-USER nonroot:nonroot
+USER app
+
+COPY --from=builder --chown=app:app /app/bin/sse /app
 
 ENTRYPOINT [ "/app" ]

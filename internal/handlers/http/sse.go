@@ -35,6 +35,7 @@ func (h *SSEHandler) Handle(c *gin.Context) {
 
 	defer func() { h.sseService.UnregisterClient(client) }()
 	pingTicker := time.Tick(15 * time.Second)
+	connectTicker := time.NewTicker(1 * time.Second)
 
 	c.Stream(func(w io.Writer) bool {
 		select {
@@ -42,6 +43,9 @@ func (h *SSEHandler) Handle(c *gin.Context) {
 			c.SSEvent("message", msg)
 		case <-pingTicker:
 			c.SSEvent("ping", "pong")
+		case <-connectTicker.C:
+			connectTicker.Stop()
+			c.SSEvent("system", "client connected!")
 		case <-client.Close():
 			c.SSEvent("system", "client disconnected!")
 			return false
