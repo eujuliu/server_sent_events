@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 type Server struct {
@@ -30,12 +32,18 @@ func NewServer(
 
 	router.Use(middlewares.Cors)
 	router.Use(middlewares.Logger)
-	router.Use(middlewares.RateLimiter(limiter))
 	router.Use(gin.Recovery())
 
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
 	})
+
+	router.GET("/metrics", func(c *gin.Context) {
+		promhttp.Handler().ServeHTTP(c.Writer, c.Request)
+	})
+
+	router.Use(otelgin.Middleware("sse"))
+	router.Use(middlewares.RateLimiter(limiter))
 
 	server := http.Server{
 		Addr:    fmt.Sprintf("%s:%s", config.Host, config.Port),

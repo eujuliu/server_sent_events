@@ -12,24 +12,22 @@ import (
 	ratelimiter "sse/pkg/rate_limiter"
 	"sse/pkg/redis"
 	"sse/pkg/sse"
-
-	"github.com/gin-gonic/gin"
+	"sse/pkg/tracing"
 )
 
 func main() {
-	config := config.NewConfig()
-
-	loggerLevel := slog.LevelInfo
-
-	if config.Server.GinMode == gin.DebugMode {
-		loggerLevel = slog.LevelDebug
+	_, err := tracing.InitTracer()
+	if err != nil {
+		panic(err)
 	}
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: loggerLevel,
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
 	}))
 
 	slog.SetDefault(logger)
+
+	config := config.NewConfig()
 
 	rmq, err := rabbitmq.NewRabbitMQ(config.RabbitMQ)
 	if err != nil {
