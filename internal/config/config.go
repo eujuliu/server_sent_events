@@ -60,7 +60,7 @@ func NewConfig() *Config {
 		},
 		Server: &ServerConfig{
 			Host:    utils.GetEnv("HOST", "0.0.0.0"),
-			Port:    utils.GetEnv("PORT", "8081"),
+			Port:    utils.GetEnv("PORT", "8080"),
 			GinMode: utils.GetEnv("GIN_MODE", gin.ReleaseMode),
 		},
 		Redis: &RedisConfig{

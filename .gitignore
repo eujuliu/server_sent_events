@@ -30,6 +30,7 @@ go.work.sum
 .env*
 !.env.test
 !.env.development
+!.env.example
 
 # Editor/IDE
 # .idea/
