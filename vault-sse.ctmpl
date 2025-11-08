@@ -1,0 +1,5 @@
+{{ with secret "kv/sse/data/envs" -}}
+ACCESS_TOKEN_SECRET={{ .Data.data.ACCESS_TOKEN_SECRET }}
+RABBITMQ_CONNECTION_STRING={{ .Data.data.RABBITMQ_CONNECTION_STRING }}
+REDIS_ADDRESS={{ .Data.data.REDIS_ADDRESS }}
+{{- end }}
