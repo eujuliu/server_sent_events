@@ -51,6 +51,7 @@ jobs:
 
   rebuild:
     name: Rebuilding Service
+    needs: push_to_registry
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
